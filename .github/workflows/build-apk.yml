@@ -28,6 +28,13 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          api-level: 36
+          ndk-version: 27.0.12077973
+
+      - name: Accept Android licenses
+        run: |
+          echo "yes" | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Create .env file
         run: |
