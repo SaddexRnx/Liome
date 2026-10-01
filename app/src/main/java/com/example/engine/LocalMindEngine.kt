@@ -52,20 +52,31 @@ class LocalMindEngine : LocalInferenceEngine {
         emit(ModelLoadProgress.Loading("Initializing execution threads (${config.threads} cores)...", 0.85f))
         delay(150)
 
-        if (NativeLlamaBridge.isAvailable) {
-            try {
-                nativeModelHandle = NativeLlamaBridge.nativeLoadModel(
-                    modelPath = modelPath,
-                    nThreads = config.threads,
-                    nContext = config.contextSize,
-                    nGpuLayers = 0,
-                    useMmap = config.useMmap,
-                    useMlock = config.memoryLock
-                )
-            } catch (e: Throwable) {
-                // Keep running in on-device fallback if native invocation throws
-                nativeModelHandle = 0L
-            }
+        if (!NativeLlamaBridge.isAvailable) {
+            val diagnostic = (NativeLlamaBridge.libraryState as? NativeLibraryState.Unavailable)?.reason
+                ?: "Native llama.cpp runtime is unavailable."
+            emit(ModelLoadProgress.Error(diagnostic))
+            return@flow
+        }
+
+        try {
+            nativeModelHandle = NativeLlamaBridge.nativeLoadModel(
+                modelPath = modelPath,
+                nThreads = config.threads,
+                nContext = config.contextSize,
+                nGpuLayers = 0,
+                useMmap = config.useMmap,
+                useMlock = config.memoryLock
+            )
+        } catch (e: Throwable) {
+            nativeModelHandle = 0L
+            emit(ModelLoadProgress.Error("Unable to load model with llama.cpp: ${e.localizedMessage ?: "unknown native error"}"))
+            return@flow
+        }
+
+        if (nativeModelHandle == 0L) {
+            emit(ModelLoadProgress.Error("llama.cpp rejected this GGUF model or could not allocate its context."))
+            return@flow
         }
 
         activeModelPath = modelPath
@@ -182,10 +193,16 @@ class LocalMindEngine : LocalInferenceEngine {
                 )
                 return@flow
             } catch (e: Throwable) {
-                // Fallback to local on-device generator
+                emit(InferenceEvent.Error("llama.cpp generation failed: ${e.localizedMessage ?: "unknown native error"}"))
+                return@flow
             }
         }
 
+        emit(InferenceEvent.Error("No loaded native llama.cpp model is available."))
+        return@flow
+
+        /*
+        // Retained below as development reference only; it must never be presented as model output.
         // High-quality on-device offline reasoning generator
         // This provides deterministic, insightful, real on-device synthesis
         val firstTokenTime = SystemClock.elapsedRealtime()
@@ -223,6 +240,7 @@ class LocalMindEngine : LocalInferenceEngine {
                 isFallback = true
             )
         )
+        */
     }.flowOn(Dispatchers.IO)
 
     override fun runHardwareBenchmark(threads: Int): Flow<BenchmarkResult> = flow {

@@ -55,6 +55,10 @@ android {
     compose = true
     buildConfig = true
   }
+  externalNativeBuild {
+    cmake { path = file("src/main/cpp/CMakeLists.txt") }
+  }
+  ndkVersion = "27.0.12077973"
   testOptions { unitTests { isIncludeAndroidResources = true } }
   dependenciesInfo {
     includeInApk = false

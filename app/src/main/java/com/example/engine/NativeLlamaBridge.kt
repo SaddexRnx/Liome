@@ -26,6 +26,9 @@ object NativeLlamaBridge {
     init {
         try {
             System.loadLibrary(LIB_NAME)
+            if (!nativeInit()) {
+                throw IllegalStateException("llama.cpp backend initialization failed")
+            }
             libraryState = NativeLibraryState.Loaded
             Log.i(TAG, "Successfully loaded native library: lib$LIB_NAME.so")
         } catch (e: UnsatisfiedLinkError) {
