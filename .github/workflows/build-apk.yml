@@ -26,15 +26,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 36
-          ndk-version: 27.0.12077973
+      - name: Setup Android SDK
+        run: |
+          mkdir -p $HOME/.android
+          touch $HOME/.android/repositories.cfg
+          echo "### User Sources for Android SDK Manager" > $HOME/.android/repositories.cfg
 
       - name: Accept Android licenses
         run: |
-          echo "yes" | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || echo "Licenses accepted or already processed"
 
       - name: Create .env file
         run: |
@@ -44,25 +44,29 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 5
 
       - name: Build release APK (if signing keys available)
-        if: env.KEYSTORE_PATH != ''
+        if: success() && env.KEYSTORE_PATH != ''
         run: ./gradlew assembleRelease
         env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
           KEYSTORE_PATH: ${{ secrets.KEYSTORE_PATH }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Upload release APK artifact
-        if: env.KEYSTORE_PATH != ''
+        if: success() && env.KEYSTORE_PATH != ''
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
