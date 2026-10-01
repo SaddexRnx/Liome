@@ -1,0 +1,6 @@
+{
+  "name": "LocalMind",
+  "description": "Privacy-first, fully offline on-device AI assistant with native local LLM execution",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
