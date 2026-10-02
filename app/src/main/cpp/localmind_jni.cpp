@@ -26,9 +26,9 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_example_engine_NativeLlamaBridge_
 
 extern "C" JNIEXPORT jlong JNICALL Java_com_example_engine_NativeLlamaBridge_nativeLoadModel(JNIEnv *env, jobject, jstring path, jint threads, jint context, jint, jboolean mmap, jboolean mlock) {
     const char *cpath = env->GetStringUTFChars(path, nullptr);
+    // mmap/mlock were removed from llama_model_params in newer llama.cpp
+    // releases; the current backend chooses the platform-safe defaults.
     llama_model_params mp = llama_model_default_params();
-    mp.use_mmap = mmap == JNI_TRUE;
-    mp.use_mlock = mlock == JNI_TRUE;
     llama_model *model = llama_model_load_from_file(cpath, mp);
     env->ReleaseStringUTFChars(path, cpath);
     if (!model) return 0;
