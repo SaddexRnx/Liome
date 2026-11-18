@@ -4,6 +4,10 @@ An Android app for running an AI assistant entirely on your device. No API calls
 
 The app is written in Kotlin with Jetpack Compose. Inference runs through a native library (`app/src/main/cpp`) that loads GGUF models locally.
 
+## About
+
+I wanted a chatbot that works with no connection and no account, where the model actually runs on the phone. That's the idea behind Liome. It's still early and I'm working on it in the open. I'm Saddek, a developer in Algeria. More of my projects are at [saddexrnx.github.io](https://saddexrnx.github.io), and I'm on [Telegram](https://t.me/Saddex_x).
+
 ## What it does
 
 - Downloads GGUF models and runs them on-device through a JNI bridge to a local inference engine
